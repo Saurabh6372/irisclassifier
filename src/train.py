@@ -6,11 +6,20 @@ load data -> train/test split -> train -> predict -> evaluate.
 Usage:
     python src/train.py
 
-Prints the accuracy and classification report, and saves the confusion
-matrix figure to outputs/confusion_matrix.png (folder created automatically).
+Prints the accuracy and classification report, saves the confusion matrix
+figure to outputs/confusion_matrix.png, and exports the trained model to
+outputs/iris_model.joblib (folder created automatically).
+
+To reuse the trained model later without retraining:
+
+    import joblib
+    model = joblib.load("outputs/iris_model.joblib")
+    prediction = model.predict([[5.1, 3.5, 1.4, 0.2]])
 """
 
 from pathlib import Path
+
+import joblib
 
 import matplotlib
 
@@ -30,6 +39,7 @@ from sklearn.tree import DecisionTreeClassifier
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = REPO_ROOT / "data" / "iris.csv"
 OUTPUT_DIR = REPO_ROOT / "outputs"
+MODEL_PATH = OUTPUT_DIR / "iris_model.joblib"
 
 TEST_SIZE = 0.2  # 80/20 train/test split -> 120 train / 30 test samples
 RANDOM_STATE = 42  # deterministic shuffle so results are reproducible
@@ -104,6 +114,15 @@ def train_and_evaluate():
     fig.savefig(out_path, dpi=150)
     plt.close(fig)
     print(f"\nConfusion matrix saved to {out_path}")
+
+    # Step 5: save the trained model so it can be reused without retraining
+    joblib.dump(model, MODEL_PATH)
+    print(f"Trained model saved to {MODEL_PATH}")
+
+    # Sanity check: reload the model and confirm it predicts identically
+    reloaded = joblib.load(MODEL_PATH)
+    assert (reloaded.predict(X_test) == y_pred).all()
+    print("Reloaded model verified: predictions match the trained model")
 
     return accuracy
 
